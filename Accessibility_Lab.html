@@ -1,0 +1,526 @@
+<!doctype html>
+<!-- lang is set so screen readers pick the right pronunciation (SC 3.1.1) -->
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Accessibility Lab: keyboard, contrast and WCAG 2.1 practice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+/* Colors live in tokens so every theme is checked once: text 4.5:1+, UI borders 3:1+ */
+:root{--bg:#f2f5f8;--fg:#14202b;--card:#fff;--mut:#46525e;--ac:#0b5c63;--acfg:#fff;--bd:#6b7886;--ok:#0a6b2e;--bad:#a4170f;
+ box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root[data-theme=dark]{--bg:#0f1720;--fg:#e8eef4;--card:#17222d;--mut:#b3bfcb;--ac:#6fd0d8;--acfg:#08262a;--bd:#8a98a6;--ok:#6fdc96;--bad:#ff9a92}
+:root[data-theme=contrast]{--bg:#000;--fg:#fff;--card:#000;--mut:#fff;--ac:#ffee00;--acfg:#000;--bd:#fff;--ok:#00ff7f;--bad:#ff7b72}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;font:1rem/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--fg)}
+[hidden]{display:none!important}
+/* Visible focus on everything (SC 2.4.7); never removed without a replacement */
+:focus-visible{outline:3px solid var(--fg);outline-offset:3px}
+.skip{position:absolute;left:.5rem;top:-4rem;background:var(--ac);color:var(--acfg);padding:.7rem 1rem;z-index:9}
+.skip:focus{top:.5rem}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+header,main,footer{max-width:62rem;margin:0 auto;padding:1rem}
+h1{font:700 2rem/1.2 Georgia,"Times New Roman",serif;margin:.2rem 0}
+h2{font:700 1.5rem/1.3 Georgia,serif;margin:.5rem 0 1rem}
+h3{font-size:1.15rem;margin:1.5rem 0 .5rem}
+p,li{max-width:70ch}
+.row{display:flex;flex-wrap:wrap;gap:.75rem;align-items:center}
+[role=tablist]{display:flex;flex-wrap:wrap;gap:.25rem;border-bottom:3px solid var(--bd);margin-top:1rem}
+[role=tab]{min-height:2.75rem;padding:.5rem 1rem;border:2px solid var(--bd);border-bottom:0;background:var(--card);color:var(--fg);font:inherit;cursor:pointer}
+[role=tab][aria-selected=true]{background:var(--ac);color:var(--acfg);font-weight:700;border-color:var(--ac)}
+.card{background:var(--card);border:2px solid var(--bd);padding:1rem;margin:1rem 0}
+.btn,button,select,input[type=text],input[type=email],input[type=color]{font:inherit;min-height:2.75rem}
+.btn,button.btn{background:var(--ac);color:var(--acfg);border:2px solid var(--ac);padding:.5rem 1rem;cursor:pointer}
+button:not(.btn):not([role=tab]){background:var(--card);color:var(--fg);border:2px solid var(--bd);padding:.5rem 1rem;cursor:pointer}
+input[type=text],input[type=email],select{background:var(--card);color:var(--fg);border:2px solid var(--bd);padding:.4rem .6rem}
+input[type=color]{width:3.5rem;padding:.1rem;border:2px solid var(--bd);background:var(--card)}
+input[type=checkbox],input[type=radio]{width:1.4rem;height:1.4rem;vertical-align:middle}
+label{display:inline-block}
+.field{margin:.75rem 0}.field label{display:block;font-weight:600}
+.err{color:var(--bad);font-weight:600}
+.toast{min-height:2.75rem;border:2px dashed var(--bd);padding:.5rem;margin-top:.75rem}
+.acc button{display:block;width:100%;text-align:left}
+.acc [role=region]{padding:.75rem;border:2px solid var(--bd);border-top:0}
+.menu{position:absolute;background:var(--card);border:2px solid var(--bd);padding:.25rem;z-index:5;min-width:11rem}
+.menu button{display:block;width:100%;text-align:left;border:0!important}
+dialog{background:var(--card);color:var(--fg);border:3px solid var(--fg);max-width:26rem}
+dialog::backdrop{background:rgba(0,0,0,.7)}
+pre{background:var(--card);border:2px solid var(--bd);padding:.75rem;overflow-x:auto;white-space:pre-wrap}
+code{font-family:ui-monospace,Menlo,Consolas,monospace}
+.klog{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.9rem;padding-left:1.2rem}
+.wrap{overflow:auto;border:2px solid var(--bd);background:var(--card);padding:.5rem}
+table.t{border-collapse:collapse;width:100%}.t th,.t td{border:1px solid var(--bd);padding:.4rem;text-align:left}
+.pf{font-weight:700}
+.pv{padding:1rem;border:2px solid var(--bd);margin:.75rem 0}
+fieldset{border:2px solid var(--bd);margin:.75rem 0}
+progress{width:100%;height:1.2rem}
+/* Sample UI (fixed light surface so Before/After compare fairly in any theme) */
+.sm{background:#fff;color:#111;padding:1rem;font-size:1em}
+.sm h2{font-size:1.4em;margin:.2em 0}.sm h3,.sm h5{font-size:1.1em}
+.sm.good{font-size:1em;max-width:100%}.sm.good *{max-width:100%}
+.sm.good p{color:#444}.sm.good a{color:#0a4fa3}
+.sm.good button{background:#0b5c63;color:#fff;border:2px solid #0b5c63;padding:.4em .9em;min-height:2.75rem;cursor:pointer}
+.sm.good input{border:2px solid #555;padding:.4em;background:#fff;color:#111;min-height:2.75rem}
+.sm.good label{display:block;font-weight:600}
+.sm.good .er{color:#a4170f;font-weight:600;display:block}
+.sm.good :focus-visible{outline:3px solid #0a4fa3;outline-offset:2px}
+.sm.good td,.sm.good th{border:1px solid #555;padding:.3em}
+.sm.bad{width:600px;font-size:14px}
+.bad .hd{display:flex;justify-content:space-between}
+.bad .lc{color:#aaa}.bad a{color:#7ab}
+.bad *:focus{outline:none}
+.bad .clk{display:inline-block;background:#2b7a82;color:#fff;padding:8px 14px;cursor:pointer}
+.bad input{border:1px solid #ddd;padding:6px}.bad .redb{border:2px solid #d33}
+.bad td{border:1px solid #ccc;padding:4px}
+.sp *{line-height:1.5!important;letter-spacing:.12em!important;word-spacing:.16em!important}.sp p{margin-bottom:2em!important}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media print{header,.noprint,[role=tablist],.skip,footer{display:none!important}body{background:#fff;color:#000}}
+
+/* ---------- Accessibility Lab: warm "PulseLens" theme (cream, cocoa, amber) ----------
+   Palette and type come from the PulseLens Pro theme. Two adjustments keep it WCAG AA:
+   --bd is a darker cocoa than PulseLens's --line so control borders reach 3:1,
+   and --mut uses PulseLens's --ink-1 because --ink-2 is only about 3.3:1 on cream. */
+:root{
+  --bg:#F7EEE1; --card:#FBF6EE; --panel:#F1E4D2; --line:#E6D8C3;
+  --fg:#3A2418; --mut:#6E5849; --ac:#8B5E34; --acfg:#ffffff;
+  --bd:#8C7457; --ok:#4A6B1F; --bad:#A8462C; --warm:#C88A3D;
+  --glow:rgba(90,55,20,.08); --radius:16px;
+  --font-display:Constantia,'Lora',Georgia,'Times New Roman',serif;
+  --font-body:Constantia,'Lora',Georgia,'Times New Roman',serif;
+  color-scheme:light;
+}
+:root[data-theme=dark]{
+  --bg:#241710; --card:#2C1E15; --panel:#38271A; --line:#4A3524;
+  --fg:#F7EEE1; --mut:#D9C4A6; --ac:#C99A66; --acfg:#241710;
+  --bd:#8F7556; --ok:#B3CC7A; --bad:#D97C52; --warm:#E0AA5C;
+  --glow:rgba(0,0,0,.35); color-scheme:dark;
+}
+:root[data-theme=contrast]{
+  --bg:#000; --card:#000; --panel:#111; --line:#fff;
+  --fg:#fff; --mut:#fff; --ac:#ffee00; --acfg:#000;
+  --bd:#fff; --ok:#00ff7f; --bad:#ff7b72; --warm:#ffee00;
+  --glow:transparent; color-scheme:dark;
+}
+html{scroll-behavior:smooth}
+body{
+  min-height:100vh;
+  background:
+    radial-gradient(circle at 6% 0%,rgba(200,138,61,.16),transparent 28rem),
+    var(--bg);
+  color:var(--fg);font:400 16px/1.65 var(--font-body);
+  transition:background .3s,color .3s;
+}
+:root[data-theme=contrast] body{background:#000}
+h1,h2,h3{font-family:var(--font-display);color:var(--fg)}
+h4{font-family:var(--font-body);font-weight:600;color:var(--fg)}
+
+/* Header: one rounded cream card, like the PulseLens top bar */
+header,main,footer{max-width:min(1180px,calc(100% - 2rem));margin-left:auto;margin-right:auto;padding:1.25rem clamp(1rem,3vw,2.2rem)}
+header{
+  margin-top:1.25rem;padding-top:1.6rem;padding-bottom:1.25rem;
+  background:var(--card);border:1px solid var(--line);border-radius:20px;
+  box-shadow:0 6px 20px var(--glow);
+}
+header:before{
+  content:"INTERACTIVE ACCESSIBILITY WORKSHOP  /  WCAG 2.1 AA";
+  display:inline-flex;align-items:center;
+  color:var(--ac);font-size:.72rem;font-weight:600;letter-spacing:.14em;
+  border:1px solid var(--line);background:var(--panel);border-radius:999px;
+  padding:.42rem .9rem;
+}
+:root[data-theme=contrast] header:before{border-color:#fff}
+header h1{
+  font:700 clamp(2.3rem,5vw,3.7rem)/1.08 var(--font-display);
+  letter-spacing:-.01em;margin:.7rem 0 .6rem;color:var(--fg);
+}
+header > p{font-size:1.02rem;color:var(--mut);max-width:64ch;margin:.5rem 0 1.2rem}
+header .row{
+  display:flex;align-items:center;justify-content:flex-start;gap:.8rem;
+  background:transparent;border:0;padding:0;box-shadow:none;width:max-content;max-width:100%;
+}
+header .row label{font-size:.86rem;font-weight:600;color:var(--mut)}
+#theme{min-width:10rem}
+
+/* Tabs: pill buttons on a tinted rail */
+[role=tablist]{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.6rem;
+  border:0;margin:1.4rem 0 .2rem;padding:.55rem;
+  border-radius:20px;background:var(--panel);
+}
+[role=tab]{
+  min-height:3.4rem;padding:.6rem 1rem;border:1.5px solid var(--bd);border-radius:999px;
+  background:var(--card);color:var(--fg);font-family:inherit;font-weight:600;font-size:.92rem;line-height:1.35;
+  cursor:pointer;transition:transform .15s ease,background .15s ease;
+}
+[role=tab]:hover{transform:translateY(-1px);border-color:var(--ac)}
+[role=tab][aria-selected=true]{
+  color:var(--acfg);background:var(--ac);border-color:var(--ac);
+}
+
+main{padding-top:1.2rem;padding-bottom:3rem}
+[role=tabpanel] > h2{
+  font:700 clamp(1.7rem,4vw,2.5rem)/1.15 var(--font-display);
+  letter-spacing:-.005em;margin:.6rem 0 .5rem;
+}
+[role=tabpanel] > p{color:var(--mut)}
+h3{font-weight:700;margin:0 0 .55rem}
+
+/* Cards */
+.card, #issues article.card{
+  position:relative;background:var(--card);border:1px solid var(--line);
+  border-radius:var(--radius);padding:clamp(1rem,2.4vw,1.5rem);margin:1rem 0;
+  box-shadow:0 6px 20px var(--glow);overflow:hidden;
+}
+:root[data-theme=contrast] .card,:root[data-theme=contrast] #issues article.card{border-color:#fff}
+.card:before{
+  content:"";position:absolute;inset:0 auto 0 0;width:5px;
+  background:linear-gradient(180deg,var(--ac),var(--warm));
+}
+.card > *{position:relative}
+#p1,#p2,#p3,#p4{animation:panelIn .28s ease both}
+@keyframes panelIn{from{opacity:.45;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+.row{display:flex;flex-wrap:wrap;gap:1rem;align-items:center}
+.row > *{max-width:100%}
+
+/* Controls */
+button,select,input[type=text],input[type=email],input[type=color],input[type=range],textarea{
+  font:inherit;min-height:2.8rem;border-radius:10px;
+}
+button,.btn,button.btn{
+  background:var(--ac);color:var(--acfg);
+  border:1.5px solid var(--ac);border-radius:999px;padding:.55rem 1.2rem;
+  font-weight:600;font-size:.92rem;letter-spacing:.02em;cursor:pointer;
+  transition:transform .15s ease,background .15s ease,color .15s ease;
+}
+button:hover,.btn:hover{transform:translateY(-1px);background:var(--fg);border-color:var(--fg);color:var(--bg)}
+button:not(.btn):not([role=tab]){
+  background:transparent;color:var(--fg);border:1.5px solid var(--bd);
+  border-radius:999px;padding:.5rem 1.1rem;
+}
+button:not(.btn):not([role=tab]):hover{background:transparent;border-color:var(--ac);color:var(--ac)}
+[role=tab]:hover{background:var(--card);color:var(--fg)}
+[role=tab][aria-selected=true]:hover{background:var(--ac);color:var(--acfg)}
+:root[data-theme=contrast] button:not(.btn):not([role=tab]):hover{color:var(--ac)}
+input[type=text],input[type=email],select{
+  background:var(--panel);color:var(--fg);border:1.5px solid var(--bd);
+  padding:.5rem .8rem;max-width:100%;
+}
+input[type=color]{width:3.5rem;padding:.18rem;border:1.5px solid var(--bd);background:var(--panel)}
+input[type=checkbox],input[type=radio]{width:1.2rem;height:1.2rem;accent-color:var(--ac);vertical-align:middle}
+label{font-weight:500}
+.field{margin:1rem 0}.field label{display:block;font-weight:600;margin-bottom:.35rem}
+.err{color:var(--bad);font-weight:600}
+.toast{min-height:2.75rem;border:1.5px dashed var(--bd);background:var(--panel);border-radius:12px;padding:.7rem 1rem;margin-top:.8rem}
+.acc button{display:block;width:100%;text-align:left;margin:.4rem 0;border-radius:12px}
+.acc [role=region]{padding:1rem;border:1px solid var(--bd);border-radius:0 0 12px 12px;background:var(--panel)}
+.menu{position:absolute;background:var(--card);border:1.5px solid var(--bd);border-radius:14px;padding:.35rem;z-index:5;min-width:11rem;box-shadow:0 12px 30px var(--glow)}
+.menu button{display:block;width:100%;text-align:left;border:0!important;border-radius:10px;box-shadow:none!important}
+dialog{background:var(--card);color:var(--fg);border:1.5px solid var(--bd);border-radius:20px;max-width:30rem;padding:1.5rem;box-shadow:0 25px 70px rgba(36,23,16,.35)}
+dialog::backdrop{background:rgba(36,23,16,.7);backdrop-filter:blur(4px)}
+pre{background:var(--panel);border:1px solid var(--bd);border-radius:12px;padding:.9rem;overflow-x:auto;white-space:pre-wrap}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em}
+.klog{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.9rem;padding-left:1.2rem}
+.wrap{overflow:auto;border:1px solid var(--bd);border-radius:14px;background:var(--card);padding:.8rem}
+table.t{border-collapse:collapse;width:100%}.t th,.t td{border:1px solid var(--bd);padding:.6rem;text-align:left}
+.pf{font-weight:700}
+.pv{padding:1rem;border:1.5px solid var(--bd);border-radius:14px;margin:.9rem 0}
+fieldset{border:1px solid var(--bd);border-radius:14px;padding:1rem;margin:.9rem 0;background:var(--card)}
+legend{font-weight:600;padding:0 .45rem}
+progress{width:100%;height:1.1rem;accent-color:var(--ac);border-radius:999px;overflow:hidden}
+#p1 .card:nth-of-type(odd),#p2 .card:nth-of-type(odd){background:linear-gradient(145deg,var(--card),var(--panel))}
+:root[data-theme=contrast] #p1 .card:nth-of-type(odd),:root[data-theme=contrast] #p2 .card:nth-of-type(odd){background:#000}
+#p3 > .row{gap:1rem}
+#issues{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.15rem 1rem}
+#issues article.card{margin:.45rem 0}
+#issues article h4{margin:.2rem 0 .65rem;font-size:1.05rem}
+#issues article details{margin-top:.75rem;border-top:1px solid var(--bd);padding-top:.65rem}
+#issues article summary{font-weight:600;cursor:pointer;color:var(--ac)}
+#chk{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 1rem}
+#chk h3{grid-column:1/-1;padding:.8rem 1rem;border-radius:14px;background:var(--panel);margin:1rem 0 .2rem}
+#rep{min-height:10rem;white-space:pre-wrap}
+footer{color:var(--mut);border-top:1px solid var(--line);font-size:.9rem}
+.skip{border-radius:10px}
+/* Focus ring uses the ink color: 3:1+ against every surface in all three themes */
+:focus-visible{outline:3px solid var(--fg)!important;outline-offset:3px!important}
+.sm{border-radius:14px;overflow:auto}
+@media(max-width:760px){
+  header,main,footer{padding-left:1rem;padding-right:1rem}
+  [role=tablist]{grid-template-columns:repeat(2,minmax(0,1fr));padding:.5rem}
+  [role=tab]{min-height:3.2rem;font-size:.85rem;padding:.55rem .7rem}
+  #issues,#chk{grid-template-columns:1fr}
+  #chk h3{grid-column:auto}
+  header .row{width:100%;justify-content:space-between}
+  #p3 > .row{display:block}
+  #wb,#wa{margin:.75rem 0}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media print{
+  body{background:#fff;color:#000}
+  header,.noprint,[role=tablist],.skip,footer{display:none!important}
+  .card{box-shadow:none;border:1px solid #888;break-inside:avoid}
+}
+
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to main content</a>
+<header>
+ <h1>Accessibility Lab</h1>
+ <p>Your hands-on accessibility studio. Explore keyboard patterns, measure contrast, repair common interface barriers, and build an audit report against WCAG 2.1 AA.</p>
+ <div class="row"><label for="theme">Theme</label>
+  <select id="theme"><option value="light">Light</option><option value="dark">Dark</option><option value="contrast">High contrast</option></select></div>
+ <div role="tablist" aria-label="Lab modules" id="maintabs">
+  <button role="tab" id="t1" aria-controls="p1" aria-selected="true">1. Keyboard and ARIA</button>
+  <button role="tab" id="t2" aria-controls="p2" aria-selected="false" tabindex="-1">2. Contrast and zoom</button>
+  <button role="tab" id="t3" aria-controls="p3" aria-selected="false" tabindex="-1">3. Fix the UI</button>
+  <button role="tab" id="t4" aria-controls="p4" aria-selected="false" tabindex="-1">4. Audit report</button>
+ </div>
+</header>
+<main id="main" tabindex="-1">
+
+<section role="tabpanel" id="p1" aria-labelledby="t1">
+ <h2>Keyboard and screen reader lab</h2>
+ <p>Use only the keyboard here. Each card lists what to test and the ARIA it uses. Prefer native HTML; ARIA fills gaps native elements cannot.</p>
+
+ <div class="card"><h3>Tabs</h3>
+  <p><strong>Test:</strong> Tab to the module tabs above, then use Left, Right, Home and End. <strong>ARIA:</strong> tablist, tab, tabpanel, aria-selected, aria-controls, roving tabindex.</p></div>
+
+ <div class="card"><h3>Accordion</h3>
+  <p><strong>Test:</strong> Enter or Space on a heading button. <strong>ARIA:</strong> aria-expanded, aria-controls.</p>
+  <div class="acc">
+   <button id="ah1" aria-expanded="false" aria-controls="ap1">What is a focus indicator?</button>
+   <div id="ap1" role="region" aria-labelledby="ah1" hidden>The outline that shows where keyboard focus is (SC 2.4.7).</div>
+   <button id="ah2" aria-expanded="false" aria-controls="ap2">Why use a real button?</button>
+   <div id="ap2" role="region" aria-labelledby="ah2" hidden>Buttons get focus, Enter, Space and a role for free (SC 2.1.1, 4.1.2).</div>
+  </div></div>
+
+ <div class="card"><h3>Modal dialog</h3>
+  <p><strong>Test:</strong> Open it, press Tab (focus stays inside), press Esc (focus returns here). <strong>ARIA:</strong> native dialog with showModal() supplies the modal role, focus trap and Esc; aria-labelledby and aria-describedby name it.</p>
+  <button class="btn" id="openDlg">Open dialog</button>
+  <dialog id="dlg" aria-labelledby="dt" aria-describedby="dd"><h4 id="dt">Confirm</h4><p id="dd">Focus is trapped in this dialog until you close it.</p>
+   <button class="btn" id="closeDlg">Close</button> <button id="other">Another control</button></dialog></div>
+
+ <div class="card"><h3>Menu button</h3>
+  <p><strong>Test:</strong> Enter or Down Arrow opens; Up, Down, Home, End move; Esc closes and returns focus. <strong>ARIA:</strong> aria-haspopup, aria-expanded, menu, menuitem.</p>
+  <div style="position:relative;display:inline-block">
+   <button id="menubtn" aria-haspopup="menu" aria-expanded="false" aria-controls="menulist">Actions</button>
+   <div id="menulist" class="menu" role="menu" aria-labelledby="menubtn" hidden>
+    <button role="menuitem" tabindex="-1">Copy</button><button role="menuitem" tabindex="-1">Rename</button><button role="menuitem" tabindex="-1">Delete</button></div></div></div>
+
+ <div class="card"><h3>Form with validation</h3>
+  <p><strong>Test:</strong> Submit empty. Focus moves to the error summary; each link jumps to its field. <strong>ARIA:</strong> aria-required, aria-invalid, aria-describedby, role=status.</p>
+  <div id="esum" class="err" tabindex="-1" hidden></div>
+  <form id="frm" novalidate>
+   <div class="field"><label for="fname">Name (required)</label><input id="fname" type="text" aria-required="true" aria-describedby="fname-err" autocomplete="name"><div id="fname-err" class="err"></div></div>
+   <div class="field"><label for="femail">Email (required)</label><input id="femail" type="email" aria-required="true" aria-describedby="femail-err" autocomplete="email"><div id="femail-err" class="err"></div></div>
+   <button class="btn" type="submit">Send</button></form>
+  <div id="status" class="toast" role="status"></div></div>
+
+ <div class="card"><h3>Keyboard event log</h3>
+  <p>Shows each key and the focused element, so you can check focus order (SC 2.4.3).</p>
+  <ol id="klog" class="klog" aria-label="Recent key events"></ol></div>
+</section>
+
+<section role="tabpanel" id="p2" aria-labelledby="t2" hidden>
+ <h2>Contrast and magnification tester</h2>
+ <div class="card"><h3>Contrast checker</h3>
+  <div class="row">
+   <div><label for="fgc">Text color</label><br><input type="color" id="fgc" value="#767676"> <input type="text" id="fgh" value="#767676" aria-label="Text color hex" size="8"></div>
+   <div><label for="bgc">Background color</label><br><input type="color" id="bgc" value="#ffffff"> <input type="text" id="bgh" value="#ffffff" aria-label="Background color hex" size="8"></div>
+  </div>
+  <p><strong>Ratio: <span id="ratio"></span>:1</strong> (shown rounded down, never up)</p>
+  <ul id="results"></ul>
+  <div class="pv" id="pv"><p style="margin:0;font-size:1rem">Normal text sample</p><p style="margin:0;font-size:1.5rem">Large text sample (24px)</p><p style="margin:0;font-size:1.167rem;font-weight:700">Large bold sample (18.66px bold)</p></div>
+  <button id="sugg">Suggest a passing text color (4.5:1)</button> <span id="sugout" role="status"></span>
+  <p>Large text means at least 24px regular or 18.66px bold. The suggestion blends your text color toward black or white until the target is met, which keeps the hue.</p></div>
+
+ <div class="card"><h3>Magnification, reflow and color vision</h3>
+  <div class="row">
+   <label for="ver">Sample</label><select id="ver"><option value="g">After (fixed)</option><option value="b">Before (broken)</option></select>
+   <label for="zoom">Text size <output id="zo">100%</output></label><input type="range" id="zoom" min="100" max="400" step="25" value="100">
+   <label for="cb">Color vision</label><select id="cb"><option value="">Normal</option><option value="pro">Protanopia</option><option value="deu">Deuteranopia</option><option value="tri">Tritanopia</option><option value="ach">Achromatopsia</option></select>
+  </div>
+  <div class="row"><label><input type="checkbox" id="rf"> Reflow at 320px (SC 1.4.10)</label><label><input type="checkbox" id="sp"> Text spacing (SC 1.4.12)</label></div>
+  <p id="mres" role="status"></p>
+  <div class="wrap"><div id="stage"></div></div>
+  <p>SC 1.4.4 asks that text resize to 200% without loss of content or function. This is a simulation: also test with browser zoom, the OS magnifier, and a screen reader such as NVDA, JAWS or VoiceOver.</p></div>
+</section>
+
+<section role="tabpanel" id="p3" aria-labelledby="t3" hidden>
+ <h2>WCAG 2.1 remediation workshop</h2>
+ <fieldset><legend>View</legend>
+  <label><input type="radio" name="view" value="b" checked> Before</label>
+  <label><input type="radio" name="view" value="a"> After</label>
+  <label><input type="radio" name="view" value="s"> Side by side</label></fieldset>
+ <div class="row" style="align-items:flex-start">
+  <div id="wb" class="wrap" style="flex:1 1 20rem"></div>
+  <div id="wa" class="wrap" style="flex:1 1 20rem" hidden></div></div>
+ <p id="prog" role="status"></p><progress id="pbar" max="14" value="0" aria-label="Issues found"></progress>
+ <h3>Issue tracker</h3><div id="issues"></div>
+</section>
+
+<section role="tabpanel" id="p4" aria-labelledby="t4" hidden>
+ <h2>Audit report and checklist</h2>
+ <div class="card"><h3>How to test</h3>
+  <p>Keyboard only: Tab, Shift+Tab, Enter, Space, arrows, Esc. Screen readers: NVDA with Firefox or Chrome, VoiceOver with Safari, TalkBack on Android. Also check zoom to 200%, contrast tools, and automated scanners (axe DevTools, Lighthouse, WAVE). Automated tools find only a portion of WCAG issues, so manual testing is required.</p></div>
+ <div id="chk"></div>
+ <div class="row noprint"><button class="btn" id="gen">Generate report</button><button id="cpy">Copy report as text</button><button id="prt">Print</button></div>
+ <pre id="rep" tabindex="-1" aria-live="off">Choose Generate report to build a summary.</pre><p id="cpst" role="status"></p>
+</section>
+</main>
+<footer><p>Limits: this app cannot replace testing with real assistive technology, and its scanners check only what they can compute.</p></footer>
+
+<!-- SVG color vision filters, applied to the sample with CSS filter:url() -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+<filter id="pro"><feColorMatrix type="matrix" values="0.567 0.433 0 0 0 0.558 0.442 0 0 0 0 0.242 0.758 0 0 0 0 0 1 0"/></filter>
+<filter id="deu"><feColorMatrix type="matrix" values="0.625 0.375 0 0 0 0.7 0.3 0 0 0 0 0.3 0.7 0 0 0 0 0 1 0"/></filter>
+<filter id="tri"><feColorMatrix type="matrix" values="0.95 0.05 0 0 0 0 0.433 0.567 0 0 0 0.475 0.525 0 0 0 0 0 1 0"/></filter>
+<filter id="ach"><feColorMatrix type="matrix" values="0.299 0.587 0.114 0 0 0.299 0.587 0.114 0 0 0.299 0.587 0.114 0 0 0 0 0 1 0"/></filter>
+</defs></svg>
+
+<script>
+const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
+const TE=(h)=>String(h).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* Theme: start from the OS preference, then let the native select decide */
+const ts=$('#theme');ts.value=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+const setTheme=()=>document.documentElement.dataset.theme=ts.value;setTheme();ts.onchange=setTheme;
+
+/* Tabs: roving tabindex so the tablist is one Tab stop; arrows move inside it */
+const tabs=$$('[role=tab]');
+function selTab(t){tabs.forEach(x=>{const on=x===t;x.setAttribute('aria-selected',on);x.tabIndex=on?0:-1;$('#'+x.getAttribute('aria-controls')).hidden=!on;});}
+tabs.forEach(t=>t.onclick=()=>selTab(t));
+$('#maintabs').addEventListener('keydown',e=>{const i=tabs.indexOf(document.activeElement);if(i<0)return;let n=-1;
+ if(e.key==='ArrowRight')n=(i+1)%tabs.length;else if(e.key==='ArrowLeft')n=(i-1+tabs.length)%tabs.length;else if(e.key==='Home')n=0;else if(e.key==='End')n=tabs.length-1;
+ if(n>-1){e.preventDefault();tabs[n].focus();selTab(tabs[n]);}});
+
+/* Polite live region: clear first so repeated messages are still announced */
+function say(m){const s=$('#status');s.textContent='';setTimeout(()=>s.textContent=m,60);}
+
+/* Accordion */
+$$('.acc button').forEach(b=>b.onclick=()=>{const o=b.getAttribute('aria-expanded')==='true';b.setAttribute('aria-expanded',String(!o));$('#'+b.getAttribute('aria-controls')).hidden=o;});
+
+/* Modal: native <dialog>.showModal() traps focus and handles Esc; we restore focus explicitly */
+const dlg=$('#dlg'),op=$('#openDlg');op.onclick=()=>dlg.showModal();$('#closeDlg').onclick=()=>dlg.close();dlg.addEventListener('close',()=>op.focus());
+
+/* Menu button pattern from the ARIA Authoring Practices Guide */
+const mb=$('#menubtn'),ml=$('#menulist'),mi=$$('[role=menuitem]',ml);
+function openM(i){ml.hidden=false;mb.setAttribute('aria-expanded','true');mi[i].focus();}
+function closeM(f){ml.hidden=true;mb.setAttribute('aria-expanded','false');if(f)mb.focus();}
+mb.onclick=()=>ml.hidden?openM(0):closeM(true);
+mb.onkeydown=e=>{if(e.key==='ArrowDown'){e.preventDefault();openM(0);}else if(e.key==='ArrowUp'){e.preventDefault();openM(mi.length-1);}};
+ml.onkeydown=e=>{const i=mi.indexOf(document.activeElement);let n=-1;
+ if(e.key==='ArrowDown')n=(i+1)%mi.length;else if(e.key==='ArrowUp')n=(i-1+mi.length)%mi.length;else if(e.key==='Home')n=0;else if(e.key==='End')n=mi.length-1;
+ else if(e.key==='Escape'){closeM(true);return;}else if(e.key==='Tab'){closeM(false);return;}
+ if(n>-1){e.preventDefault();mi[n].focus();}};
+mi.forEach(m=>m.onclick=()=>{closeM(true);say('Chose: '+m.textContent);});
+
+/* Form: errors are text (not color only), tied to fields, and summarized with focus */
+$('#frm').onsubmit=e=>{e.preventDefault();const errs=[];
+ [['fname','Enter your name.'],['femail','Enter an email address like name@example.com.']].forEach(([id,m])=>{
+  const f=$('#'+id),er=$('#'+id+'-err'),ok=f.value.trim()&&(id!=='femail'||/^\S+@\S+\.\S+$/.test(f.value));
+  f.setAttribute('aria-invalid',String(!ok));er.textContent=ok?'':'Error: '+m;if(!ok)errs.push([id,m]);});
+ const sum=$('#esum');
+ if(errs.length){sum.innerHTML='<h4>'+errs.length+(errs.length>1?' problems':' problem')+' to fix</h4><ul>'+errs.map(([id,m])=>'<li><a href="#'+id+'">'+TE(m)+'</a></li>').join('')+'</ul>';sum.hidden=false;sum.focus();}
+ else{sum.hidden=true;say('Form sent.');}};
+$('#esum').onclick=e=>{if(e.target.tagName==='A'){e.preventDefault();$(e.target.getAttribute('href')).focus();}};
+
+/* Keyboard event log and the deliberate keyboard trap used by the Before sample */
+const klog=$('#klog');
+function nm(el){return (el.getAttribute&&el.getAttribute('aria-label'))||(el.labels&&el.labels[0]&&el.labels[0].textContent.trim())||(el.textContent||'').trim().slice(0,28);}
+document.addEventListener('keydown',e=>{const el=document.activeElement;
+ const li=document.createElement('li');li.textContent=e.key+' on <'+el.tagName.toLowerCase()+'>'+(el.getAttribute('role')?' role='+el.getAttribute('role'):'')+' "'+nm(el)+'"';
+ klog.prepend(li);while(klog.children.length>8)klog.lastChild.remove();
+ if(el.classList&&el.classList.contains('trap')){if(e.key==='Tab')e.preventDefault();if(e.key==='Escape')el.blur();}});
+
+/* ---------- Module 2: contrast math exactly as WCAG 2.x defines it ---------- */
+function norm(h){h=h.trim();if(/^#[0-9a-f]{3}$/i.test(h))h='#'+[...h.slice(1)].map(c=>c+c).join('');return /^#[0-9a-f]{6}$/i.test(h)?h.toLowerCase():null;}
+function lum(h){const c=[1,3,5].map(i=>parseInt(h.slice(i,i+2),16)/255).map(v=>v<=0.04045?v/12.92:Math.pow((v+0.055)/1.055,2.4));return .2126*c[0]+.7152*c[1]+.0722*c[2];}
+function ratio(a,b){const x=lum(a),y=lum(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05);}
+function mix(h,t,p){return '#'+[1,3,5].map(i=>Math.round(parseInt(h.slice(i,i+2),16)*(1-p)+t*p).toString(16).padStart(2,'0')).join('');}
+function suggest(fg,bg,t){if(ratio(fg,bg)>=t)return fg;const to=lum(bg)>0.179?0:255;for(let k=1;k<=100;k++){const c=mix(fg,to,k/100);if(ratio(c,bg)>=t)return c;}return to?'#ffffff':'#000000';}
+const TESTS=[['Normal text AA',4.5],['Large text AA',3],['UI component or graphic AA (SC 1.4.11)',3],['Normal text AAA',7],['Large text AAA',4.5]];
+function pair(a,b,col){const pk=$('#'+a),tx=$('#'+b);pk.oninput=()=>{tx.value=pk.value;upd();};tx.oninput=()=>{const n=norm(tx.value);if(n){pk.value=n;upd();}};}
+pair('fgc','fgh');pair('bgc','bgh');
+function upd(){const f=norm($('#fgh').value),b=norm($('#bgh').value);if(!f||!b)return;const r=ratio(f,b);
+ $('#ratio').textContent=(Math.floor(r*100)/100).toFixed(2);
+ $('#results').innerHTML=TESTS.map(([n,t])=>{const ok=r>=t;return '<li><span class="pf" style="color:var(--'+(ok?'ok':'bad')+')">'+(ok?'\u2714 Pass':'\u2716 Fail')+'</span> '+n+' (needs '+t+':1)</li>';}).join('');
+ $('#pv').style.cssText='color:'+f+';background:'+b;}
+upd();
+$('#sugg').onclick=()=>{const f=norm($('#fgh').value),b=norm($('#bgh').value);if(!f||!b){$('#sugout').textContent='Enter two valid hex colors first.';return;}
+ const s=suggest(f,b,4.5);$('#fgh').value=s;$('#fgc').value=s;upd();$('#sugout').textContent='Text color set to '+s+'.';};
+
+/* ---------- Sample UI: Before has 14 failures, After fixes each ---------- */
+const IMG="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='60'%3E%3Crect width='80' height='60' fill='%23c8a27a'/%3E%3C/svg%3E";
+function sample(g,p){const add="document.getElementById('"+p+"st').textContent='Added to cart'";
+ if(g)return '<div class="sm good"><header style="padding:0;display:flex;justify-content:space-between;align-items:center"><h2>Brew &amp; Bean</h2><button type="button" aria-label="Search">\uD83D\uDD0D</button></header>'
+ +'<h3>Our beans</h3><img src="'+IMG+'" alt="Bag of medium-roast Ethiopian beans" width="80" height="60">'
+ +'<p>Small-batch coffee, roasted weekly. <a href="#" onclick="return false">Read our roasting guide</a></p>'
+ +'<button type="button" onclick="'+add+'">Add to cart</button> <span id="'+p+'st" role="status"></span>'
+ +'<form onsubmit="return false"><label for="'+p+'e">Email</label><input id="'+p+'e" type="email" aria-invalid="true" aria-describedby="'+p+'ee" value="bob@"><span id="'+p+'ee" class="er">\u26A0 Error: enter a full email address.</span></form>'
+ +'<table><caption>Prices</caption><thead><tr><th scope="col">Bag</th><th scope="col">Price</th></tr></thead><tbody><tr><td>250 g</td><td>$9</td></tr></tbody></table></div>';
+ return '<div class="sm bad"><div class="hd"><h2>Brew &amp; Bean</h2><button type="button">\uD83D\uDD0D</button></div>'
+ +'<h5>Our beans</h5><img src="'+IMG+'">'
+ +'<p class="lc">Small-batch coffee, roasted weekly. To learn more <a href="#" onclick="return false" tabindex="5">click here</a></p>'
+ +'<div class="clk" onclick="'+add+'">Add to cart</div><span id="'+p+'st"></span>'
+ +'<form onsubmit="return false"><input class="redb" placeholder="Email" value="bob@"><br><br><input class="trap" value="Tab is trapped here. Press Esc to leave."></form>'
+ +'<table><tr><td>Bag</td><td>Price</td></tr><tr><td>250 g</td><td>$9</td></tr></table></div>';}
+
+/* Magnification stage */
+const stage=$('#stage');
+function renderStage(){stage.innerHTML=sample($('#ver').value==='g',$('#ver').value==='g'?'mg':'mb');applyStage();}
+function applyStage(){const z=+$('#zoom').value;$('#zo').textContent=z+'%';stage.style.fontSize=(16*z/100)+'px';
+ stage.style.width=$('#rf').checked?'320px':'';stage.classList.toggle('sp',$('#sp').checked);stage.style.filter=$('#cb').value?'url(#'+$('#cb').value+')':'';
+ const w=stage.parentElement;const scroll=stage.scrollWidth>w.clientWidth+1||$('#rf').checked&&stage.scrollWidth>322;
+ $('#mres').textContent=(scroll?'Warning: content scrolls horizontally here, which fails reflow (SC 1.4.10) when it happens at 320px or 400% zoom.':'No horizontal scrolling detected.')+($('#sp').checked?' Check the sample for clipped or overlapping text.':'');}
+['ver','zoom','rf','sp','cb'].forEach(id=>$('#'+id).addEventListener(id==='zoom'?'input':'change',id==='ver'?renderStage:applyStage));
+renderStage();
+
+/* ---------- Module 3: issue tracker ---------- */
+const IS=[
+['Low-contrast text','1.4.3','Contrast (Minimum)','AA','People with low vision, or anyone in bright light','Contrast checker: #aaa on white is about 2.3:1.','Use at least 4.5:1 for normal text.','<p style="color:#aaa">','<p style="color:#444">'],
+['Image without alt text','1.1.1','Non-text Content','A','Screen reader users','Inspect the img: no alt, so the file name may be read.','Describe meaningful images; use alt="" for decorative ones.','<img src="beans.png">','<img src="beans.png" alt="Bag of Ethiopian beans">'],
+['Clickable div','2.1.1','Keyboard','A','Keyboard, switch and screen reader users','Press Tab: the div never gets focus.','Use a native button.','<div onclick="add()">Add</div>','<button type="button" onclick="add()">Add</button>'],
+['Placeholder-only field','3.3.2','Labels or Instructions','A','Screen reader and cognitive-disability users','Type in the field: the hint disappears and there is no label.','Add a visible label tied with for and id.','<input placeholder="Email">','<label for="e">Email</label><input id="e">'],
+['Error shown by color only','1.4.1','Use of Color','A','Color-blind and low-vision users','Apply the achromatopsia filter: the red border is the only cue.','Add text and an icon, and link it with aria-describedby.','<input class="redb">','<input aria-invalid="true" aria-describedby="m"><span id="m">Error: ...</span>'],
+['No visible focus indicator','2.4.7','Focus Visible','AA','Keyboard users','Tab through: you cannot see where focus is.','Remove outline:none or provide a clear replacement.','*:focus{outline:none}',':focus-visible{outline:3px solid #0a4fa3}'],
+['Positive tabindex','2.4.3','Focus Order','A','Keyboard and screen reader users','Tab: the link with tabindex=5 is reached out of order.','Use tabindex 0 or -1 only and follow the DOM order.','<a tabindex="5">','<a href="#">'],
+['Skipped heading level','1.3.1','Info and Relationships','A','Screen reader users who navigate by headings','Headings list jumps from h2 to h5. (Strictly a best practice unless the structure is misrepresented.)','Use heading levels that reflect the outline.','<h2>..</h2><h5>..</h5>','<h2>..</h2><h3>..</h3>'],
+['Vague link text','2.4.4','Link Purpose (In Context)','A','Screen reader users who list links','Links list shows "click here".','Make the link text describe its destination.','<a>click here</a>','<a>Read our roasting guide</a>'],
+['Icon-only button without a name','4.1.2','Name, Role, Value','A','Screen reader and voice control users','Accessibility tree shows an empty name.','Add aria-label or visible text.','<button>\uD83D\uDD0D</button>','<button aria-label="Search">\uD83D\uDD0D</button>'],
+['Table without headers','1.3.1','Info and Relationships','A','Screen reader users','Cells are read with no column context.','Use th with scope, plus a caption.','<td>Bag</td>','<th scope="col">Bag</th>'],
+['Fixed pixel width','1.4.10','Reflow','AA','Low-vision users who zoom','Set 320px in Module 2: horizontal scroll appears.','Use max-width and relative units.','width:600px','max-width:100%'],
+['Status not announced','4.1.3','Status Messages','AA','Screen reader users','Press Add to cart: nothing is spoken.','Put the message in a role="status" region.','<span id="st"></span>','<span id="st" role="status"></span>'],
+['Keyboard trap','2.1.2','No Keyboard Trap','A','Keyboard users','Focus the last field and press Tab: focus never leaves. (Esc is the escape hatch here.)','Never intercept Tab without an exit.','onkeydown: Tab -> preventDefault','(no handler)']];
+$('#wb').innerHTML=sample(false,'b');$('#wa').innerHTML=sample(true,'a');
+$$('input[name=view]').forEach(r=>r.onchange=()=>{const v=$('input[name=view]:checked').value;$('#wb').hidden=v==='a';$('#wa').hidden=v==='b';});
+$('#issues').innerHTML=IS.map((x,i)=>'<article class="card"><h4>'+(i+1)+'. '+TE(x[0])+'</h4><p>SC '+x[1]+' '+x[2]+' (Level '+x[3]+')</p>'
+ +'<label><input type="checkbox" class="fnd"> Found<span class="sr">: '+TE(x[0])+'</span></label> <label><input type="checkbox"> Fixed<span class="sr">: '+TE(x[0])+'</span></label>'
+ +'<details><summary>Details and fix</summary><p><strong>Affects:</strong> '+TE(x[4])+'</p><p><strong>Detect:</strong> '+TE(x[5])+'</p><p><strong>Fix:</strong> '+TE(x[6])+'</p>'
+ +'<p>Before:</p><pre><code>'+TE(x[7])+'</code></pre><p>After:</p><pre><code>'+TE(x[8])+'</code></pre></details></article>').join('');
+function prog(){const n=$$('.fnd:checked').length;$('#prog').textContent=n+' of '+IS.length+' issues found';$('#pbar').value=n;}
+$('#issues').addEventListener('change',prog);prog();
+
+/* ---------- Module 4: checklist and report ---------- */
+const CK=[['Perceivable','1.1.1','Non-text Content'],['Perceivable','1.3.1','Info and Relationships'],['Perceivable','1.4.1','Use of Color'],['Perceivable','1.4.3','Contrast (Minimum)'],['Perceivable','1.4.4','Resize Text'],['Perceivable','1.4.10','Reflow'],['Perceivable','1.4.11','Non-text Contrast'],['Perceivable','1.4.12','Text Spacing'],
+['Operable','2.1.1','Keyboard'],['Operable','2.1.2','No Keyboard Trap'],['Operable','2.4.3','Focus Order'],['Operable','2.4.4','Link Purpose (In Context)'],['Operable','2.4.7','Focus Visible'],
+['Understandable','3.1.1','Language of Page'],['Understandable','3.3.1','Error Identification'],['Understandable','3.3.2','Labels or Instructions'],
+['Robust','4.1.2','Name, Role, Value'],['Robust','4.1.3','Status Messages']];
+$('#chk').innerHTML=['Perceivable','Operable','Understandable','Robust'].map(P=>'<h3>'+P+'</h3>'+CK.map((c,i)=>c[0]!==P?'':
+ '<fieldset><legend>SC '+c[1]+' '+c[2]+'</legend>'+['pass:Pass','fail:Fail','na:Not applicable'].map(o=>{const[v,l]=o.split(':');return '<label><input type="radio" name="c'+i+'" value="'+v+'"> '+l+'</label> ';}).join('')
+ +'<div class="field"><label for="n'+i+'">Notes for SC '+c[1]+'</label><input type="text" id="n'+i+'" style="width:100%"></div></fieldset>').join('')).join('');
+function report(){const L=['Accessibility Lab audit report','Generated: '+new Date().toLocaleString(),''];const fails=[];
+ ['Perceivable','Operable','Understandable','Robust'].forEach(P=>{let p=0,f=0,na=0,u=0;
+  CK.forEach((c,i)=>{if(c[0]!==P)return;const v=($('input[name=c'+i+']:checked')||{}).value;if(v==='pass')p++;else if(v==='fail'){f++;fails.push('SC '+c[1]+' '+c[2]+': '+($('#n'+i).value||'(no notes)'));}else if(v==='na')na++;else u++;});
+  L.push(P+': '+p+' pass, '+f+' fail, '+na+' n/a, '+u+' not rated'+(p+f?' (pass rate '+Math.round(100*p/(p+f))+'% of rated items)':''));});
+ L.push('','Failed items:');L.push(...(fails.length?fails:['None recorded']));L.push('','Note: automated tools catch only some issues; confirm with manual and assistive technology tests.');return L.join('\n');}
+$('#gen').onclick=()=>{const r=$('#rep');r.textContent=report();r.focus();};
+$('#cpy').onclick=async()=>{const t=report();$('#rep').textContent=t;try{await navigator.clipboard.writeText(t);$('#cpst').textContent='Report copied.';}catch(e){$('#cpst').textContent='Copy was blocked. Select the report text and copy it manually.';}};
+$('#prt').onclick=()=>{$('#rep').textContent=report();window.print();};
+</script>
+</body>
+</html>
